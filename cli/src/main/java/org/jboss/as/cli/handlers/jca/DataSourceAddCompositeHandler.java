@@ -17,6 +17,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.OperationCommandWithDescription;
 import org.jboss.as.cli.handlers.ResourceCompositeOperationHandler;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -29,18 +30,22 @@ import org.jboss.dmr.Property;
 public class DataSourceAddCompositeHandler extends ResourceCompositeOperationHandler implements OperationCommandWithDescription {
 
     private static final String CONNECTION_PROPERTIES = "connection-properties";
+    private static final String SET_DEFAULT_DATASOURCE = "set-default-datasource";
 
     private ArgumentWithValue conProps;
+    private final ArgumentWithoutValue setDefaultDatasource;
 
     public DataSourceAddCompositeHandler(CommandContext ctx, String nodeType) {
         super(ctx, "data-source-add", nodeType, null, Util.ADD);
         conProps = new ArgumentWithValue(this, null, ArgumentValueConverter.PROPERTIES, "--" + CONNECTION_PROPERTIES);
+        setDefaultDatasource = new ArgumentWithoutValue(this, "--" + SET_DEFAULT_DATASOURCE);
     }
 
     @Override
     protected Map<String, CommandArgument> loadArguments(CommandContext ctx) {
         final Map<String, CommandArgument> args = super.loadArguments(ctx);
         args.put(conProps.getFullName(), conProps);
+        args.put(setDefaultDatasource.getFullName(), setDefaultDatasource);
         return args;
     }
 
@@ -61,7 +66,39 @@ public class DataSourceAddCompositeHandler extends ResourceCompositeOperationHan
                 steps.add(addProp);
             }
         }
+
+        if (setDefaultDatasource.isPresent(ctx.getParsedCommandLine())) {
+            final String jndiName = ctx.getParsedCommandLine().getPropertyValue("--" + Util.JNDI_NAME);
+            if (jndiName == null) {
+                throw new CommandFormatException("--jndi-name is required when --set-default-datasource is set.");
+            }
+            final ModelNode writeStep = new ModelNode();
+            writeStep.get(Util.ADDRESS).set(buildEeDefaultBindingsAddress(ctx));
+            writeStep.get(Util.OPERATION).set(Util.WRITE_ATTRIBUTE);
+            writeStep.get(Util.NAME).set(Util.DATASOURCE);
+            writeStep.get(Util.VALUE).set(jndiName);
+            steps.add(writeStep);
+        }
+
         return req;
+    }
+
+    /**
+     * Builds the address for {@code /subsystem=ee/service=default-bindings}, prepending
+     * {@code /profile=<name>} when running in domain mode.
+     */
+    private ModelNode buildEeDefaultBindingsAddress(CommandContext ctx) throws CommandFormatException {
+        final ModelNode address = new ModelNode();
+        if (isDependsOnProfile() && ctx.isDomainMode()) {
+            final String profileName = profile.getValue(ctx.getParsedCommandLine());
+            if (profileName == null) {
+                throw new CommandFormatException("Required argument --profile is missing.");
+            }
+            address.add(Util.PROFILE, profileName);
+        }
+        address.add(Util.SUBSYSTEM, Util.EE);
+        address.add(Util.SERVICE, Util.DEFAULT_BINDINGS);
+        return address;
     }
 
     @Override
@@ -86,7 +123,7 @@ public class DataSourceAddCompositeHandler extends ResourceCompositeOperationHan
         final ModelNode opDescr = result.get(Util.DESCRIPTION);
         final StringBuilder buf = new StringBuilder();
         buf.append(opDescr.asString());
-        buf.append(" (unlike the add operation, this command accepts xa-datasource-properties).");
+        buf.append(" (unlike the add operation, this command accepts connection-properties).");
         opDescr.set(buf.toString());
 
         final ModelNode allProps = result.get(Util.REQUEST_PROPERTIES);
@@ -96,6 +133,15 @@ public class DataSourceAddCompositeHandler extends ResourceCompositeOperationHan
         conProps.get(Util.TYPE).set(ModelType.LIST);
         conProps.get(Util.REQUIRED).set(false);
         conProps.get(Util.NILLABLE).set(false);
+
+        final ModelNode setDefaultProp = allProps.get(SET_DEFAULT_DATASOURCE);
+        setDefaultProp.get(Util.DESCRIPTION).set(
+                "If present, sets this datasource as the default datasource in the EE subsystem " +
+                "(/subsystem=ee/service=default-bindings) using the datasource's jndi-name. " +
+                "Any existing default datasource is overridden.");
+        setDefaultProp.get(Util.TYPE).set(ModelType.BOOLEAN);
+        setDefaultProp.get(Util.REQUIRED).set(false);
+        setDefaultProp.get(Util.NILLABLE).set(true);
 
         return result;
     }
