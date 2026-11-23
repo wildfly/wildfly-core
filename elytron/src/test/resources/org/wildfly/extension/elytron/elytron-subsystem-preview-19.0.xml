@@ -342,6 +342,9 @@
             </key-manager>
         </key-managers>
         <trust-managers>
+            <trust-manager name="stapling" algorithm="PKIX" key-store="jks_store" accept-ocsp-stapling="true"/>
+            <trust-manager name="stapling-disabled" algorithm="PKIX" key-store="jks_store" accept-ocsp-stapling="false"/>
+            <trust-manager name="stapling-expression" algorithm="PKIX" key-store="jks_store" accept-ocsp-stapling="${exp.accept-ocsp-stapling:true}"/>
             <trust-manager name="serverTrust" algorithm="SunX509" key-store="jks_store"/>
             <trust-manager name="serverTrust2" algorithm="SunX509" key-store="jks_store" providers="custom-loader" provider-name="first"/>
             <trust-manager name="trust-with-crl" algorithm="SunX509" key-store="jks_store">
