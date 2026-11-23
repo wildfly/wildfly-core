@@ -296,6 +296,7 @@ class RealmParser {
         .addChild(failoverRealmParser)
         .addChild(jaasRealmParser)
         .build();
+
     RealmParser() {
 
     }
