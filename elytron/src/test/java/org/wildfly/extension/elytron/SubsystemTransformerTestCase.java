@@ -132,6 +132,14 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
         testTransformation(WILDFLY_41_0_0);
     }
 
+    @Test
+    public void testRejectingTransformersWFLY41() throws Exception {
+        testRejectingTransformers(WILDFLY_41_0_0, "elytron-transformers-19.0-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "JwtRealmWithAllowedJkuValues")),
+                        REJECTED_RESOURCE)
+        );
+    }
+
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
         AdditionalInitialization additionalInitialization = AdditionalInitialization.fromModelTestControllerVersion(controllerVersion);
 

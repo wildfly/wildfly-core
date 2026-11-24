@@ -9,12 +9,8 @@
 
 <subsystem xmlns="urn:wildfly:elytron:community:19.0">
     <security-realms>
-        <token-realm name="TokenRealmWithTransformer" principal-claim="sub" principal-transformer="myCasePrincipalTransformerUpper">
-            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid"/>
+        <token-realm name="JwtRealmWithAllowedJkuValues" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" allowed-jku-values="https://localhost:50831"/>
         </token-realm>
     </security-realms>
-
-    <mappers>
-        <case-principal-transformer name="myCasePrincipalTransformerUpper" upper-case="true"/>
-    </mappers>
 </subsystem>

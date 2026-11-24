@@ -14,6 +14,7 @@ import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JWT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OAUTH2_INTROSPECTION;
+import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ALLOWED_JKU_VALUES;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.AUDIENCE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.CERTIFICATE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ISSUER;
@@ -187,7 +188,13 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setRestartAllServices()
                 .build();
 
-        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP, CONNECTION_TIMEOUT, READ_TIMEOUT)
+        static final StringListAttributeDefinition ALLOWED_JKU_VALUES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ALLOWED_JKU_VALUES)
+                .setAllowExpression(true)
+                .setRequired(false)
+                .setMinSize(1)
+                .build();
+
+        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP, CONNECTION_TIMEOUT, READ_TIMEOUT, ALLOWED_JKU_VALUES)
                 .setRequired(false)
                 .setRestartAllServices()
                 .build();
@@ -295,6 +302,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 ModelNode jwtValidatorNode = JwtValidatorAttributes.JWT_VALIDATOR.resolveModelAttribute(context, operation);
                 String[] issuer = asStringArrayIfDefined(context, ISSUER, jwtValidatorNode);
                 String[] audience = asStringArrayIfDefined(context, AUDIENCE, jwtValidatorNode);
+                String[] allowedJkuValues = asStringArrayIfDefined(context, ALLOWED_JKU_VALUES, jwtValidatorNode);
                 String publicKey = PUBLIC_KEY.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
                 String keyStoreName = KEY_STORE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
@@ -374,11 +382,15 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                             }
                         }
 
-                        String allowedJkuValuesForTokenRealm = System.getProperty(ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
-                        if (allowedJkuValuesForTokenRealm == null || allowedJkuValuesForTokenRealm.isEmpty()) {
-                            ROOT_LOGGER.noAllowedJkuValuesSpecifiedForTokenRealm(address, ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
+                        if (allowedJkuValues != null && allowedJkuValues.length > 0) {
+                            jwtValidatorBuilder.setAllowedJkuValues(allowedJkuValues);
                         } else {
-                            jwtValidatorBuilder.setAllowedJkuValues(allowedJkuValuesForTokenRealm.split("\\s+"));
+                            String allowedJkuValuesForTokenRealm = System.getProperty(ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
+                            if (allowedJkuValuesForTokenRealm == null || allowedJkuValuesForTokenRealm.isEmpty()) {
+                                ROOT_LOGGER.noAllowedJkuValuesSpecifiedForTokenRealm(address, ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
+                            } else {
+                                jwtValidatorBuilder.setAllowedJkuValues(allowedJkuValuesForTokenRealm.split("\\s+"));
+                            }
                         }
 
                         TokenSecurityRealm.Builder realmBuilder = TokenSecurityRealm.builder()

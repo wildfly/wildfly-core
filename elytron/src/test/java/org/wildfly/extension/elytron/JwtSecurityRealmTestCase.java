@@ -25,6 +25,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
@@ -140,6 +141,69 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
 
         // token validation should fail
         assertFalse(identityExists(securityRealm, evidence));
+    }
+
+    @Test
+    public void testJwtRealmWithSubsystemAllowedJkuValue() throws Exception {
+        KernelServices services = createKernelServices();
+
+        BearerTokenEvidence evidence = new BearerTokenEvidence(
+                JwtTestUtil.createJwt(keyPair1, 60, -1, "1", new URI("https://localhost:50831")));
+
+        SecurityRealm securityRealm = assertSecurityRealmNotNull(services, "JwtRealmWithAllowedJkuValues");
+        // token validation should succeed
+        assertTrue(identityExists(securityRealm, evidence));
+    }
+
+    @Test
+    public void testJwtRealmWithSubsystemDisallowedJkuValue() throws Exception {
+        KernelServices services = createKernelServices();
+
+        BearerTokenEvidence evidence = new BearerTokenEvidence(
+                JwtTestUtil.createJwt(keyPair1, 60, -1, "1", new URI("https://localhost:50834")));
+
+        SecurityRealm securityRealm = assertSecurityRealmNotNull(services, "JwtRealmWithAllowedJkuValues");
+        // token validation should fail
+        assertFalse(identityExists(securityRealm, evidence));
+    }
+
+    @Test
+    public void testSubsystemConfigTakesPrecedenceOverSystemProperty() throws Exception {
+        String customProp = "wildfly.elytron.jwt.allowed.jku.values.JwtRealmWithAllowedJkuValues";
+        System.setProperty(customProp, "https://localhost:50834");
+        try {
+            KernelServices services = createKernelServices();
+            SecurityRealm securityRealm = assertSecurityRealmNotNull(services, "JwtRealmWithAllowedJkuValues");
+
+            BearerTokenEvidence evidenceAllowedInSubsystem = new BearerTokenEvidence(
+                    JwtTestUtil.createJwt(keyPair1, 60, -1, "1", new URI("https://localhost:50831")));
+            assertTrue(identityExists(securityRealm, evidenceAllowedInSubsystem));
+
+            BearerTokenEvidence evidenceInSystemPropertyOnly = new BearerTokenEvidence(
+                    JwtTestUtil.createJwt(keyPair1, 60, -1, "1", new URI("https://localhost:50834")));
+            assertFalse(identityExists(securityRealm, evidenceInSystemPropertyOnly));
+        } finally {
+            System.clearProperty(customProp);
+        }
+    }
+
+    @Test
+    public void testReadResourceJwtRealmWithAllowedJkuValues() throws Exception {
+        KernelServices services = createKernelServices();
+
+        ModelNode readResource = Util.getReadResourceOperation(getSecurityRealmAddress("JwtRealmWithAllowedJkuValues"));
+        readResource.get("recursive").set(true);
+        ModelNode response = services.executeOperation(readResource);
+        assertEquals(response.toString(), "success", response.get("outcome").asString());
+
+        ModelNode result = response.get("result");
+        assertTrue(result.hasDefined("jwt"));
+        ModelNode jwt = result.get("jwt");
+        assertTrue(jwt.hasDefined("allowed-jku-values"));
+        List<ModelNode> allowedJkuValues = jwt.get("allowed-jku-values").asList();
+        assertEquals(2, allowedJkuValues.size());
+        assertEquals("https://localhost:50832", allowedJkuValues.get(0).asString());
+        assertEquals("https://localhost:50831", allowedJkuValues.get(1).asString());
     }
 
     @Test

@@ -8,6 +8,9 @@
         <token-realm name="JwtRealm" principal-claim="sub">
             <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" />
         </token-realm>
+        <token-realm name="JwtRealmWithAllowedJkuValues" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" allowed-jku-values="https://localhost:50832 https://localhost:50831" />
+        </token-realm>
         <token-realm name="JwtRealmWithoutAllowedJkuValues" principal-claim="sub">
             <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" />
         </token-realm>
