@@ -2063,6 +2063,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="allowed-jku-values" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A list of strings representing the allowed jku (JWK Set URL) values. If a token contains a 'jku' header parameter, its value must match one of the allowed values specified here.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">

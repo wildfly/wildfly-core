@@ -37,7 +37,9 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.junit.AfterClass;
@@ -70,7 +72,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     private static String jwksResponse;
 
     public JwtSecurityRealmTestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.PREVIEW);
     }
 
     @BeforeClass
@@ -103,6 +105,11 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource(JWT_REALM_TEST);
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return new TestEnvironment(Stability.PREVIEW);
     }
 
     @Test
@@ -207,6 +214,35 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     }
 
     @Test
+    public void testAllowedJkuValuesStability() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment(Stability.PREVIEW))
+                .setSubsystemXml("<subsystem xmlns=\"urn:wildfly:elytron:preview:19.0\"/>").build();
+        assertTrue(services.isSuccessfulBoot());
+
+        PathAddress address = getSecurityRealmAddress("PreviewJwtRealm");
+
+        ModelNode add = Util.createAddOperation(address);
+        add.get(ElytronDescriptionConstants.PRINCIPAL_CLAIM).set("sub");
+        ModelNode jwt = add.get(ElytronDescriptionConstants.JWT);
+        jwt.get(ElytronDescriptionConstants.ISSUER).add("elytron-oauth2-realm");
+        jwt.get(ElytronDescriptionConstants.AUDIENCE).add("my-app-valid");
+        ModelNode response = services.executeOperation(add);
+        assertEquals(response.toJSONString(false), "success", response.get("outcome").asString());
+
+        // Verify that the ALLOWED_JKU_VALUES attribute has PREVIEW stability
+        ModelNode descriptionOp = Util.createOperation("read-resource-description", address);
+        descriptionOp.get("recursive").set(true);
+        ModelNode description = services.executeOperation(descriptionOp);
+        assertEquals(description.toJSONString(false), "success", description.get("outcome").asString());
+        ModelNode jwtDesc = description.get("result", "attributes", "jwt");
+        ModelNode jkuDesc = jwtDesc.get("value-type", ElytronDescriptionConstants.ALLOWED_JKU_VALUES);
+        assertTrue(jkuDesc.isDefined());
+        assertEquals(Stability.PREVIEW.toString(), jkuDesc.get("stability").asString());
+    }
+
+
+
+    @Test
     public void testTokenWithoutJkuValue() throws Exception {
         KernelServices services = createKernelServicesWithPublicKeysConfigured();
 
@@ -237,7 +273,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     }
 
     private KernelServices createKernelServices() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(JWT_REALM_TEST).build();
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment(Stability.PREVIEW)).setSubsystemXmlResource(JWT_REALM_TEST).build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {
                 fail(services.getBootError().toString());
@@ -261,7 +297,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
         assertEquals(response.toString(), "success", response.get("outcome").asString());
         String realmWithConfiguredPublicKeys = services.getPersistedSubsystemXml();
 
-        services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(realmWithConfiguredPublicKeys).build();
+        services = super.createKernelServicesBuilder(new TestEnvironment(Stability.PREVIEW)).setSubsystemXml(realmWithConfiguredPublicKeys).build();
 
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {

@@ -189,6 +189,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final StringListAttributeDefinition ALLOWED_JKU_VALUES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ALLOWED_JKU_VALUES)
+                .setStability(Stability.PREVIEW)
                 .setAllowExpression(true)
                 .setRequired(false)
                 .setMinSize(1)

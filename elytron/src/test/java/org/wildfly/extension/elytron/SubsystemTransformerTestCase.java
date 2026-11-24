@@ -44,7 +44,7 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
 
     public SubsystemTransformerTestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.COMMUNITY);
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.PREVIEW);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
 
     @Test
     public void testRejectingTransformersWFLY41() throws Exception {
-        testRejectingTransformers(WILDFLY_41_0_0, "elytron-transformers-19.0-reject.xml", new FailedOperationTransformationConfig()
+        testRejectingTransformers(WILDFLY_41_0_0, Stability.PREVIEW, "elytron-transformers-19.0-reject.xml", new FailedOperationTransformationConfig()
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "JwtRealmWithAllowedJkuValues")),
                         REJECTED_RESOURCE)
         );
