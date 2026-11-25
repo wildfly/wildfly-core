@@ -39,6 +39,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -55,6 +56,7 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
     public static final SimpleAttributeDefinition MAX_HISTORY = SimpleAttributeDefinitionBuilder.create(
             ModelDescriptionConstants.MAX_HISTORY, ModelType.INT, true)
             .setDefaultValue(new ModelNode(10))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .build();
     public static final PathElement PATH = PathElement.pathElement(SERVICE, CONFIGURATION_CHANGES);
     public static final String OPERATION_NAME = "list-changes";
