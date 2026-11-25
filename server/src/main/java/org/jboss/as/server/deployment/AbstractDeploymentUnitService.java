@@ -15,8 +15,9 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -25,6 +26,7 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.service.ServiceInstaller;
 
 /**
  * Abstract service responsible for managing the life-cycle of a {@link DeploymentUnit}.
@@ -41,7 +43,9 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final CapabilityServiceSupport capabilityServiceSupport;
     private final Consumer<DeploymentUnit> deploymentUnitConsumer;
     protected final String name;
+    // TODO Remove this after WF migrates to Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER
     private volatile UnaryOperator<ServiceTarget> serviceTargetTransformer = null;
+    private volatile UnaryOperator<ServiceInstaller> serviceInstallerTransformer = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
@@ -68,47 +72,41 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             ServerLogger.DEPLOYMENT_LOGGER.startingSubDeployment(name);
         }
 
-        Consumer<StartContext> installer = new Consumer<>() {
+        ServiceInstaller installer = new ServiceInstaller() {
             @Override
-            public void accept(StartContext context) {
+            public ServiceController<?> install(ServiceTarget target) {
+                Set<AttachmentKey<?>> initialAttachmentKeys = AbstractDeploymentUnitService.this.getDeploymentUnitAttachmentKeys();
                 ServiceName serviceName = AbstractDeploymentUnitService.this.deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
                 DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(AbstractDeploymentUnitService.this.deploymentUnit, Phase.values()[0]);
-                context.getChildTarget().addService(serviceName, phaseService)
+                return target.addService(serviceName, phaseService)
                         .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector())
+                        .addListener(new LifecycleListener() {
+                            @Override
+                            public void handleEvent(ServiceController<?> controller, LifecycleEvent event) {
+                                if (event == LifecycleEvent.DOWN) {
+                                    // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
+                                    for (AttachmentKey<?> key : AbstractDeploymentUnitService.this.getDeploymentUnitAttachmentKeys()) {
+                                        if (!initialAttachmentKeys.contains(key)) {
+                                            AbstractDeploymentUnitService.this.deploymentUnit.removeAttachment(key);
+                                        }
+                                    }
+                                }
+                            }
+                        })
                         .install();
             }
         };
 
         // If a transformer was previously attached, reattach to the new deployment unit instance and transform the ServiceTarget for the initial phase using that transformer
-        if (this.serviceTargetTransformer != null) {
+        if (this.serviceInstallerTransformer != null) {
+            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER, this.serviceInstallerTransformer);
+            this.serviceInstallerTransformer.apply(installer).install(context.getChildTarget());
+        } else if (this.serviceTargetTransformer != null) {
+            // TODO Remove this after WF migrates to Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER
             this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER, this.serviceTargetTransformer);
-            Set<AttachmentKey<?>> initialAttachmentKeys = this.getDeploymentUnitAttachmentKeys();
-            Runnable uninstaller = new Runnable() {
-                @Override
-                public void run() {
-                    // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
-                    for (AttachmentKey<?> key : AbstractDeploymentUnitService.this.getDeploymentUnitAttachmentKeys()) {
-                        if (!initialAttachmentKeys.contains(key)) {
-                            AbstractDeploymentUnitService.this.deploymentUnit.removeAttachment(key);
-                        }
-                    }
-                }
-            };
-            ServiceBuilder<?> builder = this.serviceTargetTransformer.apply(target).addService();
-            builder.provides(this.deploymentUnit.getServiceName().append("installer"));
-            builder.setInstance(new org.jboss.msc.Service() {
-                @Override
-                public void start(StartContext context) throws StartException {
-                    installer.accept(context);
-                }
-
-                @Override
-                public void stop(StopContext context) {
-                    uninstaller.run();
-                }
-            }).install();
+            ServiceInstaller.Builder.of(installer).build().install(this.serviceTargetTransformer.apply(context.getChildTarget()));
         } else {
-            installer.accept(context);
+            installer.install(context.getChildTarget());
         }
         deploymentUnitConsumer.accept(deploymentUnit);
     }
@@ -124,15 +122,17 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
 
     @Override
     public synchronized void stop(final StopContext context) {
-        deploymentUnitConsumer.accept(null);
+         deploymentUnitConsumer.accept(null);
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
             ServerLogger.DEPLOYMENT_LOGGER.stoppedDeployment(managementName, name, (int) (context.getElapsedTime() / 1000000L));
         } else {
             ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(name, (int) (context.getElapsedTime() / 1000000L));
         }
-        // Retain any attached builder across restarts
+        // TODO Remove this after WF migrates to Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER
         this.serviceTargetTransformer = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER);
+        // Retain any attached transformer across restarts
+        this.serviceInstallerTransformer = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER);
         //clear up all attachments
         for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
             deploymentUnit.removeAttachment(key);

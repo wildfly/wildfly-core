@@ -33,6 +33,7 @@ import org.jboss.modules.Module;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.service.ServiceInstaller;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -75,7 +76,13 @@ public final class Attachments {
     /**
      * An attachment defining a transformer of the ServiceTarget used to install a deployment unit phase.
      */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<UnaryOperator<ServiceTarget>> DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER = AttachmentKey.create(UnaryOperator.class);
+
+    /**
+     * An attachment defining a transformer of the ServiceInstaller used to install a deployment unit phase.
+     */
+    public static final AttachmentKey<UnaryOperator<ServiceInstaller>> DEPLOYMENT_UNIT_PHASE_SERVICE_INSTALLER_TRANSFORMER = AttachmentKey.create(UnaryOperator.class);
 
     /**
      * A function which will be used to expand expressions within spec descriptors
