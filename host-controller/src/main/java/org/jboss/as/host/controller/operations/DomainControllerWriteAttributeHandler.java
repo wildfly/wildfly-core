@@ -23,6 +23,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.LongRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -87,6 +88,13 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                     .setRequires(ModelDescriptionConstants.PORT)
+                    .build();
+    public static final SimpleAttributeDefinition CONNECTION_TIMEOUT =
+            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONNECTION_TIMEOUT, ModelType.LONG, true)
+                    .setAllowExpression(true)
+                    .setValidator(new LongRangeValidator(1, Long.MAX_VALUE, true, true))
+                    .setDefaultValue(new ModelNode(5000L))
+                    .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                     .build();
     public static final SimpleAttributeDefinition PROTOCOL =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
@@ -246,6 +254,9 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
             } else {
                 hostControllerInfo.setRemoteDomainControllerIgnoreUnaffectedConfiguration(ignoreUnusedConfiguration.asBoolean());
             }
+            ModelNode connectionTimeoutNode = DomainControllerWriteAttributeHandler.CONNECTION_TIMEOUT.resolveModelAttribute(context, remoteDC);
+            hostControllerInfo.setRemoteDomainControllerConnectionTimeout(connectionTimeoutNode.asLong());
+
             AdminOnlyDomainConfigPolicy domainConfigPolicy
                     = AdminOnlyDomainConfigPolicy.getPolicy(DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.resolveModelAttribute(context, remoteDC).asString());
             hostControllerInfo.setAdminOnlyDomainConfigPolicy(domainConfigPolicy);
