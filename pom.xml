@@ -327,7 +327,6 @@
         <module>core-security</module>
         <module>bootable-jar</module>
         <module>build</module>
-        <module>dist</module>
         <module>component-matrix-builder</module>
         <module>core-feature-pack</module>
         <module>core-management</module>
@@ -360,9 +359,15 @@
         <module>service</module>
         <module>subsystem</module>
         <module>subsystem-test</module>
-        <module>testsuite</module>
         <module>threads</module>
         <module>version</module>
+        <!-- Keep dist last before testsuite so it completes Central staging before the bundle is uploaded.
+        This module executes the ChecksumUpdater.java via JBang maven plugin to calculate the checksums of any
+        artifact injected into the build. See dist module pom.xml.
+        The testsuite requires that dist is built before.
+        -->
+        <module>dist</module>
+        <module>testsuite</module>
     </modules>
 
     <build>
@@ -2130,6 +2135,16 @@
         <profile>
             <id>jboss-release</id>
             <properties>
+                <release.assembly.skip>false</release.assembly.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>central-release</id>
+            <properties>
+                <!-- Maven Central release properties; overrides of jboss-parent's 'central-release' profile settings -->
+                <central.autoPublish>false</central.autoPublish>
+                <central.deploymentName>wildfly-core-${project.version}</central.deploymentName>
+                <central.waitUntil>validated</central.waitUntil>
                 <release.assembly.skip>false</release.assembly.skip>
             </properties>
         </profile>

@@ -129,7 +129,7 @@
         <org.wildfly.test.kill-servers-before-test>false</org.wildfly.test.kill-servers-before-test>
 
         <!-- Don't try to deploy the testsuite modules because they don't build jars -->
-        <maven.deploy.skip>true</maven.deploy.skip>
+        <central.skipPublishing>true</central.skipPublishing>
 
         <!-- used to enable trace logging for test suite runs -->
         <trace>none</trace>
@@ -548,6 +548,26 @@
                      if a wildfly.channels pom property is set. -->
                 <wildfly.channels>org.wildfly.core:wildfly-core-manifest:${project.version}</wildfly.channels>
             </properties>
+        </profile>
+
+        <profile>
+            <id>central-release</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.sonatype.central</groupId>
+                            <artifactId>central-publishing-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>injected-central-publishing</id>
+                                    <phase>none</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
 

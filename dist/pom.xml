@@ -146,5 +146,40 @@
                 </property>
             </activation>
         </profile>
+        <profile>
+            <id>central-release</id>
+            <build>
+                <plugins>
+                    <!--
+                     The wildfly-bom-builder-plugin generates POM files for the BOM's. These files are added to
+                     the project via the plugin. However, with the central-publishing-maven-plugin these are not
+                     discovered and therefore do not get the checksum files required. To handle this, scan the staging
+                     directory and add checksum's for any POM files that are missing them.
+
+                     This is executed here as it's the last sub-project/module to be built for releasing.
+                     -->
+                    <plugin>
+                        <groupId>dev.jbang</groupId>
+                        <artifactId>jbang-maven-plugin</artifactId>
+                        <version>0.0.8</version>
+                        <executions>
+                            <execution>
+                                <id>add-missing-checksums</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <script>${maven.multiModuleProjectDirectory}/ChecksumUpdater.java</script>
+                                    <args>
+                                        <arg>${maven.multiModuleProjectDirectory}/target/central-staging/</arg>
+                                    </args>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

@@ -18,6 +18,10 @@
     <artifactId>wildfly-io-tests</artifactId>
     <name>WildFly: IO Subsystem tests</name>
 
+    <properties>
+        <central.skipPublishing>true</central.skipPublishing>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
