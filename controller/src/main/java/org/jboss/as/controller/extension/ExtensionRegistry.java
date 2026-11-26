@@ -232,7 +232,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     private final JmxAuthorizer authorizer;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<>();
-    private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
+    private volatile TransformerRegistry transformerRegistry;
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
 
     private ExtensionRegistry(Builder builder) {
@@ -243,6 +243,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
         this.stability = builder.stabilitySupplier;
+        this.transformerRegistry = TransformerRegistry.Factory.create(this.getStability());
     }
 
     /**
@@ -497,7 +498,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
      */
     public void clear() {
         synchronized (extensions) {    // we synchronize just to guard unnamedMerged
-            transformerRegistry = TransformerRegistry.Factory.create();
+            transformerRegistry = TransformerRegistry.Factory.create(this.getStability());
             extensions.clear();
             reverseMap.clear();
             subsystemsInfo.clear();
