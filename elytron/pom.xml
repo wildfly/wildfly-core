@@ -398,6 +398,7 @@
                                 <exclude>elytron-subsystem-preview*.xml</exclude>
                                 <exclude>elytron-transformers-19.0-reject.xml</exclude>
                                 <exclude>token-realm-principal-transformer.xml</exclude>
+                                <exclude>jwt-realm-test.xml</exclude>
                             </excludes>
                             <systemId>src/main/resources/schema/wildfly-elytron_19_0.xsd</systemId>
                         </validationSet>

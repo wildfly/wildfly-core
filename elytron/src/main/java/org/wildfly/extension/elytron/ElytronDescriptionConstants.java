@@ -38,6 +38,7 @@ interface ElytronDescriptionConstants {
     String ALGORITHM = "algorithm";
     String ALGORITHM_FROM = "algorithm-from";
     String ALLOW_BLANK_PASSWORD = "allow-blank-password";
+    String ALLOWED_JKU_VALUES = "allowed-jku-values";
     String ALT_NAME_TYPE = "alt-name-type";
     String AND = "and";
     String ANONYMOUS = "anonymous";
