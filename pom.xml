@@ -359,11 +359,15 @@
         <module>service</module>
         <module>subsystem</module>
         <module>subsystem-test</module>
-        <module>testsuite</module>
         <module>threads</module>
         <module>version</module>
-        <!-- Keep dist last so it completes Central staging before the bundle is uploaded. -->
+        <!-- Keep dist last before testsuite so it completes Central staging before the bundle is uploaded.
+        This module executes the ChecksumUpdater.java via JBang maven plugin to calculate the checksums of any
+        artifact injected into the build. See dist module pom.xml.
+        The testsuite requires that dist is built before.
+        -->
         <module>dist</module>
+        <module>testsuite</module>
     </modules>
 
     <build>

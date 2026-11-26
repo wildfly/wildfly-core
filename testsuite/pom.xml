@@ -376,17 +376,6 @@
                         <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
-
-                <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>injected-central-publishing</id>
-                            <phase>none</phase>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -559,6 +548,26 @@
                      if a wildfly.channels pom property is set. -->
                 <wildfly.channels>org.wildfly.core:wildfly-core-manifest:${project.version}</wildfly.channels>
             </properties>
+        </profile>
+
+        <profile>
+            <id>central-release</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.sonatype.central</groupId>
+                            <artifactId>central-publishing-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>injected-central-publishing</id>
+                                    <phase>none</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
 

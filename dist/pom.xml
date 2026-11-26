@@ -151,7 +151,7 @@
             <build>
                 <plugins>
                     <!--
-                     The wildfly-bom-builder-maven-plugin generates POM files for the BOM's. These files are added to
+                     The wildfly-bom-builder-plugin generates POM files for the BOM's. These files are added to
                      the project via the plugin. However, with the central-publishing-maven-plugin these are not
                      discovered and therefore do not get the checksum files required. To handle this, scan the staging
                      directory and add checksum's for any POM files that are missing them.
