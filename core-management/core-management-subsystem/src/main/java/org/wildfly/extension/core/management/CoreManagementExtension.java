@@ -32,8 +32,9 @@ public class CoreManagementExtension implements Extension {
     static final String RESOURCE_NAME = CoreManagementExtension.class.getPackage().getName() + ".LocalDescriptions";
 
     static final ModelVersion VERSION_1_0_0 = ModelVersion.create(1, 0, 0);
+    static final ModelVersion VERSION_2_0_0 = ModelVersion.create(2, 0, 0);
 
-    static final ModelVersion CURRENT_VERSION = VERSION_1_0_0;
+    static final ModelVersion CURRENT_VERSION = VERSION_2_0_0;
 
     public static ResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);

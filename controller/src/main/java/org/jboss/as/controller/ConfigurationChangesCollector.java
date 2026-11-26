@@ -68,7 +68,7 @@ public interface ConfigurationChangesCollector {
         public void setMaxHistory(int maxHistory) {
             synchronized (history) {
                 this.maxHistory = maxHistory;
-                while(maxHistory < history.size()) {
+                while (maxHistory < history.size() && !history.isEmpty()) {
                     history.removeLast();
                 }
             }
