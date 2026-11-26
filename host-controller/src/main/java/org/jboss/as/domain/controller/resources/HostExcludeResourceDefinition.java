@@ -58,6 +58,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         EAP74("EAP7.4", KernelAPIVersion.VERSION_16_0),
         EAP80("EAP8.0", KernelAPIVersion.VERSION_22_0),
         EAP81("EAP8.1", KernelAPIVersion.VERSION_28_0),
+        EAP82("EAP8.2", KernelAPIVersion.VERSION_34_0),
         WILDFLY10("WildFly10.0", KernelAPIVersion.VERSION_4_0),
         WILDFLY10_1("WildFly10.1", KernelAPIVersion.VERSION_4_2),
         WILDFLY11("WildFly11.0", KernelAPIVersion.VERSION_5_0),
