@@ -4997,6 +4997,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="accept-ocsp-stapling" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Accept stapled OCSP responses when validating server certificates. Enabling this also enables
+                    revocation checking (OCSP first, CRL fallback, soft-fail false unless configured) and applies the
+                    connection's endpoint identification and algorithm constraints; it applies to every consumer of
+                    this shared trust-manager, including client certificate checks, and does not enable server-side
+                    stapling.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="soft-fail" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>

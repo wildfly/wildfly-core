@@ -117,7 +117,10 @@ class TlsParser {
             .addAttribute(SSLDefinitions.SOFT_FAIL)
             .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH);
 
-    private PersistentResourceXMLBuilder trustManagerParser_14_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
+    private PersistentResourceXMLBuilder trustManagerParser_14_0 = trustManagerParser_14_0();
+
+    private PersistentResourceXMLBuilder trustManagerParser_14_0() {
+        return PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
             .setXmlWrapperElement(TRUST_MANAGERS)
             .addAttribute(SSLDefinitions.ALGORITHM)
             .addAttribute(SSLDefinitions.KEYSTORE)
@@ -130,6 +133,7 @@ class TlsParser {
             .addAttribute(SSLDefinitions.SOFT_FAIL)
             .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH)
             .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LISTS); // new
+    }
 
     private PersistentResourceXMLBuilder filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
             .addAttribute(FilteringKeyStoreDefinition.KEY_STORE)
@@ -372,14 +376,22 @@ class TlsParser {
             .addChild(dynamicClientSslContextParser) // new
             .build();
 
-    final PersistentResourceXMLDescription tlsParser_19_0 = decorator(TLS)
+    final PersistentResourceXMLDescription tlsParser_19_0 = tlsParser_19_0(false);
+    final PersistentResourceXMLDescription tlsParserPreview_19_0 = tlsParser_19_0(true);
+
+    private PersistentResourceXMLDescription tlsParser_19_0(boolean preview) {
+        PersistentResourceXMLBuilder trustManager = trustManagerParser_14_0();
+        if (preview) {
+            trustManager.addAttribute(SSLDefinitions.ACCEPT_OCSP_STAPLING);
+        }
+        return decorator(TLS)
             .addChild(decorator(KEY_STORES)
                     .addChild(keyStoreParser)
                     .addChild(ldapKeyStoreParser)
                     .addChild(filteringKeyStoreParser)
             )
             .addChild(keyManagerParser_12_0)
-            .addChild(trustManagerParser_14_0)
+            .addChild(trustManager)
             .addChild(serverSslContextParser_9_0)
             .addChild(clientSslContextParser_9_0)
             .addChild(certificateAuthorityParser)
@@ -387,4 +399,5 @@ class TlsParser {
             .addChild(serverSslSniContextParser)
             .addChild(dynamicClientSslContextParser) // new in DEFAULT
             .build();
+    }
 }

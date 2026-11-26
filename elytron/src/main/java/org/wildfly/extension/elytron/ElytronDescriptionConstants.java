@@ -12,6 +12,7 @@ package org.wildfly.extension.elytron;
  */
 interface ElytronDescriptionConstants {
 
+    String ACCEPT_OCSP_STAPLING = "accept-ocsp-stapling";
     String ACCOUNT_KEY = "account-key";
     String ACTION = "action";
     String ACTIVE_SESSION_COUNT = "active-session-count";

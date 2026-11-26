@@ -4,6 +4,8 @@
  */
 package org.wildfly.extension.elytron;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.operations.common.Util;
@@ -100,5 +102,59 @@ public class DefaultStabilityTestCase extends AbstractSubsystemTest {
         ModelNode write = services.executeOperation(Util.getWriteAttributeOperation(address,
                 ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_NAME));
         Assert.assertEquals(write.toJSONString(false), FAILED, write.get(OUTCOME).asString());
+    }
+
+    /**
+     * The {@code accept-ocsp-stapling} attribute of {@code trust-manager} is registered at {@link Stability#PREVIEW},
+     * so at {@link Stability#DEFAULT} it is absent from the resource description, an {@code add} supplying it drops it
+     * silently instead of storing it, and it cannot be written.
+     */
+    @Test
+    public void testAcceptOcspStaplingNotRegisteredInDefaultStability() {
+        PathAddress address = PathAddress.pathAddress(SUBSYSTEM, ELYTRON)
+                .append(ElytronDescriptionConstants.TRUST_MANAGER, "stapling");
+
+        ModelNode add = Util.createAddOperation(address);
+        add.get(ElytronDescriptionConstants.KEY_STORE).set("accounts.keystore");
+        add.get(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING).set(true);
+        ModelNode response = services.executeOperation(add);
+        Assert.assertEquals(response.toJSONString(false), SUCCESS, response.get(OUTCOME).asString());
+
+        ModelNode description = services.executeOperation(Util.createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, address));
+        Assert.assertEquals(description.toJSONString(false), SUCCESS, description.get(OUTCOME).asString());
+        Assert.assertFalse(description.toJSONString(false),
+                description.get(RESULT, ATTRIBUTES).hasDefined(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING));
+
+        ModelNode resource = services.executeOperation(Util.createOperation(READ_RESOURCE_OPERATION, address));
+        Assert.assertEquals(resource.toJSONString(false), SUCCESS, resource.get(OUTCOME).asString());
+        Assert.assertFalse(resource.toJSONString(false),
+                resource.get(RESULT).hasDefined(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING));
+
+        ModelNode write = services.executeOperation(Util.getWriteAttributeOperation(address,
+                ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING, true));
+        Assert.assertEquals(write.toJSONString(false), FAILED, write.get(OUTCOME).asString());
+    }
+
+    /**
+     * Only the preview schema accepts {@code accept-ocsp-stapling}; every schema enabled at {@link Stability#DEFAULT}
+     * rejects it at parse time. Community and preview namespaces are not parsable at this stability.
+     */
+    @Test
+    public void testAcceptOcspStaplingRejectedByDefaultSchemas() throws Exception {
+        for (ElytronSubsystemSchema schema : ElytronSubsystemSchema.values()) {
+            if (schema.getStability() != Stability.DEFAULT) {
+                continue;
+            }
+            String xml = "<subsystem xmlns=\"" + schema.getNamespace().getUri() + "\"><tls><trust-managers>"
+                    + "<trust-manager name=\"tm\" key-store=\"store\" accept-ocsp-stapling=\"true\"/>"
+                    + "</trust-managers></tls></subsystem>";
+            try {
+                parse(xml);
+                Assert.fail("Accepted accept-ocsp-stapling in " + schema);
+            } catch (XMLStreamException expected) {
+                Assert.assertTrue(expected.getMessage(),
+                        expected.getMessage().contains(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING));
+            }
+        }
     }
 }

@@ -356,6 +356,13 @@ class SSLDefinitions {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition ACCEPT_OCSP_STAPLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
     static final SimpleAttributeDefinition SOFT_FAIL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SOFT_FAIL, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
@@ -713,7 +720,7 @@ class SSLDefinitions {
                 .setRestartAllServices()
                 .build();
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, CERTIFICATE_REVOCATION_LISTS, OCSP, SOFT_FAIL, ONLY_LEAF_CERT, MAXIMUM_CERT_PATH};
+        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, CERTIFICATE_REVOCATION_LISTS, OCSP, ACCEPT_OCSP_STAPLING, SOFT_FAIL, ONLY_LEAF_CERT, MAXIMUM_CERT_PATH};
 
         DoohickeyAddHandler<TrustManager> add = new DoohickeyAddHandler<TrustManager>(TRUST_MANAGER_RUNTIME_CAPABILITY, TRUST_MANAGER_API_CAPABILITY) {
 
@@ -731,6 +738,7 @@ class SSLDefinitions {
                     private volatile ModelNode ocspNode;
                     private volatile ModelNode multipleCrlsNode;
                     private volatile boolean hasRevocation;
+                    private volatile boolean acceptOcspStapling;
                     // Revocation fields
                     private volatile boolean softFail;
                     private volatile boolean onlyLeafCert;
@@ -750,7 +758,8 @@ class SSLDefinitions {
                         providerLoader = providersDefinition.resolveModelAttribute(context, model).asStringOrNull();
                         keyStoreName = keystoreDefinition.resolveModelAttribute(context, model).asStringOrNull();
                         aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
-                        hasRevocation = model.hasDefined(CERTIFICATE_REVOCATION_LIST.getName())
+                        acceptOcspStapling = ACCEPT_OCSP_STAPLING.resolveModelAttribute(context, model).asBoolean();
+                        hasRevocation = acceptOcspStapling || model.hasDefined(CERTIFICATE_REVOCATION_LIST.getName())
                                 || model.hasDefined(OCSP.getName())
                                 || model.hasDefined(CERTIFICATE_REVOCATION_LISTS.getName());
                         if (hasRevocation) {
@@ -969,6 +978,7 @@ class SSLDefinitions {
 
                         X509RevocationTrustManager.Builder builder = X509RevocationTrustManager.builder();
                         builder.setResponderURI(responderUri);
+                        builder.setAcceptOCSPStapling(acceptOcspStapling);
                         builder.setSoftFail(softFail);
                         builder.setOnlyEndEntity(onlyLeafCert);
                         if (maxCertPath != null) builder.setMaxCertPath(maxCertPath.intValue());
