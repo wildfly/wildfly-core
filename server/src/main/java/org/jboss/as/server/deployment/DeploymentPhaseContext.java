@@ -38,7 +38,7 @@ public interface DeploymentPhaseContext extends Attachable {
      * @return the service target
      * @deprecated Use {@link #getRequirementServiceTarget()} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     default ServiceTarget getServiceTarget() {
         return this.getRequirementServiceTarget();
     }
@@ -96,7 +96,7 @@ public interface DeploymentPhaseContext extends Attachable {
      * @throws IllegalStateException If this is the last phase
      * @deprecated Use {@link #requires(ServiceDependency)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     default <T> void requires(ServiceName serviceName, DelegatingSupplier<T> supplier) {
         ServiceDependency<T> dependency = ServiceDependency.on(serviceName);
         supplier.set(dependency);

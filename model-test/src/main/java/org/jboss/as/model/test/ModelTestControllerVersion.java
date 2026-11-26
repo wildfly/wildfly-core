@@ -131,7 +131,7 @@ public enum ModelTestControllerVersion {
      * @deprecated The artifact prefix has not been relevant since WildFly 8. Remove usages of this method and replace with
      * {@link ModelTestControllerVersion#createGAV(String)} and {@link ModelTestControllerVersion#createCoreGAV(String)} as appropriate.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "29.0")
     public String getArtifactIdPrefix() {
         return artifactIdPrefix;
     }
@@ -198,7 +198,7 @@ public enum ModelTestControllerVersion {
      * @deprecated Use {@link ModelTestControllerVersion#createGAV(String)} and
      * {@link ModelTestControllerVersion#createCoreGAV(String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "29.0")
     public String getMavenGav(String artifactIdPart, boolean coreArtifact) {
         return String.format("%s:%s%s:%s",
                 coreArtifact ? getCoreMavenGroupId() : getMavenGroupId(),

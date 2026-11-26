@@ -12,7 +12,7 @@ package org.jboss.as.controller;
  * @deprecated internal usage only
  */
 @SuppressWarnings("DeprecatedIsStillUsed")
-@Deprecated(forRemoval = false)
+@Deprecated(forRemoval = false, since = "1.0")
 public final class CurrentOperationIdHolder {
 
     private static final ThreadLocal<Integer> currentOperationID = new ThreadLocal<>();

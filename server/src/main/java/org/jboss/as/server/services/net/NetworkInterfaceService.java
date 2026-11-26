@@ -47,7 +47,7 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
      *
      * @deprecated use the org.wildfly.network.interface capability
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.0")
     public static final ServiceName JBOSS_NETWORK_INTERFACE = ServiceName.JBOSS.append("network");
 
     private static final String IPV4_ANYLOCAL = "0.0.0.0";

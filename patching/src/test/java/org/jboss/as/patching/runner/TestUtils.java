@@ -163,7 +163,7 @@ public class TestUtils {
      * @return the patch environment
      * @deprecated see {@linkplain org.jboss.as.patching.installation.InstallationManager}
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public static DirectoryStructure createLegacyTestStructure(final File jbossHome) {
         final File bundles = new File(jbossHome, BUNDLES);
         final File modules = new File(jbossHome, MODULES);

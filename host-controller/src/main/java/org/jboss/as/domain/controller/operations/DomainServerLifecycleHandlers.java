@@ -75,7 +75,7 @@ public class DomainServerLifecycleHandlers {
             .setValidator(EnumValidator.create(StartMode.class))
             .build();
 
-    @Deprecated
+    @Deprecated(since = "8.0")
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .setDefaultValue(ModelNode.ZERO)

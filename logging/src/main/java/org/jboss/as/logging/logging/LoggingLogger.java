@@ -165,7 +165,7 @@ public interface LoggingLogger extends BasicLogger {
      * @deprecated will be removed when the {@link org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor#PER_DEPLOYMENT_LOGGING}
      * is removed
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     @LogMessage(level = WARN)
     @Message(id = 15, value = "The per-logging deployment property (%s) has been deprecated. Please use the %s attribute to enable/disable per-deployment logging.")
     void perDeploymentPropertyDeprecated(String propertyName, String attributeName);
@@ -181,7 +181,7 @@ public interface LoggingLogger extends BasicLogger {
      * @deprecated will be removed when the {@link org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor#PER_DEPLOYMENT_LOGGING}
      * is removed
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     @LogMessage(level = WARN)
     @Message(id = 16, value = "The per-logging deployment property (%s) is being ignored because the attribute %s has been set to ignore configuration files in the deployment %s.")
     void perLoggingDeploymentIgnored(String propertyName, String attributeName, String deploymentName);

@@ -12,6 +12,6 @@ public enum JvmType {
     ORACLE,
     IBM,
     OTHER,
-    @Deprecated
+    @Deprecated(since = "3.0")
     SUN
 }

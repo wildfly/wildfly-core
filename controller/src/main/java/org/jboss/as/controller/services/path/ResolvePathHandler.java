@@ -170,7 +170,7 @@ public class ResolvePathHandler implements OperationStepHandler {
          *
          * @return the operation handler builder
          */
-        @Deprecated(forRemoval = false)
+        @Deprecated(forRemoval = false, since = "1.0")
         public static Builder of(final String operationName, final PathManager pathManager) {
             Assert.checkNotNullParam("operationName", operationName);
             Assert.checkNotNullParam("pathManager", pathManager);

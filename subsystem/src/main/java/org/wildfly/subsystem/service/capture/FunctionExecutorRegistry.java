@@ -20,7 +20,7 @@ public interface FunctionExecutorRegistry<V> extends org.wildfly.service.capture
     /**
      * @deprecated Superseded by {@link #getExecutor(Object)}.
      */
-    @Deprecated
+    @Deprecated(since = "35.0")
     default FunctionExecutor<V> getExecutor(ServiceDependency<V> key) {
         AtomicReference<ServiceName> reference = new AtomicReference<>();
         key.accept(new ServiceNameCapturingServiceBuilder(reference));

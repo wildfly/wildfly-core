@@ -31,7 +31,7 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
     /**
      * This is only retained to support {@link #getAttributes()} and for those subclasses that reference this protected attribute directly.
      */
-    @Deprecated(forRemoval = true) // This is referenceable by subclasses
+    @Deprecated(forRemoval = true, since = "22.0") // This is referenceable by subclasses
     protected final Collection<? extends AttributeDefinition> attributes;
 
     protected RestartParentResourceAddHandler(String parentKeyName) {
@@ -39,18 +39,18 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
         this.attributes = List.of();
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     protected RestartParentResourceAddHandler(String parentKeyName, Collection<? extends AttributeDefinition> attributes) {
         super(parentKeyName);
         this.attributes = attributes.isEmpty() ? List.of() : List.copyOf(attributes);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     protected RestartParentResourceAddHandler(String parentKeyName, RuntimeCapability ... capabilities) {
         this(parentKeyName);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     public RestartParentResourceAddHandler(String parentKeyName, Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
         this(parentKeyName, attributes);
     }
@@ -60,7 +60,7 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
      * @deprecated Use the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered instead.
      */
     @Override
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     public Collection<? extends AttributeDefinition> getAttributes() {
         return this.attributes;
     }

@@ -10,6 +10,6 @@ package org.jboss.as.threads;
  *
  * @deprecated Use {@link ManagedQueueExecutorService}
  */
-@Deprecated(forRemoval = true, since = "29.0.0")
+@Deprecated(forRemoval = true, since = "29.0")
 public interface ManagedJBossThreadPoolExecutorService extends ManagedQueueExecutorService {
 }

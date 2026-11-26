@@ -537,7 +537,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @return PersistentResourceXMLBuilder
      * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "24.0")
     public static PersistentResourceXMLBuilder builder(final PathElement pathElement) {
         return new PersistentResourceXMLBuilder(pathElement);
     }
@@ -550,7 +550,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @return PersistentResourceXMLBuilder
      * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "24.0")
     public static PersistentResourceXMLBuilder builder(final PathElement pathElement, final String namespaceURI) {
         return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
     }
@@ -563,7 +563,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @return a builder for creating a {@link PersistentResourceXMLDescription}.
      * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "24.0")
     public static PersistentResourceXMLBuilder builder(PathElement path, Namespace namespace) {
         return new PersistentResourceXMLBuilder(path, namespace.getUri());
     }
@@ -919,7 +919,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         /**
          * @deprecated Use {@link #setNameAttributeName(String)}
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "21.0")
         public PersistentResourceXMLBuilder setUseValueAsElementName(final boolean useValueAsElementName) {
             this.useValueAsElementName = useValueAsElementName;
             return this;
@@ -950,7 +950,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
          *
          * @deprecated Use an xml attribute to provide the name of the resource.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "21.0")
         public PersistentResourceXMLBuilder setForcedName(String forcedName) {
             this.forcedName = forcedName;
             return this;

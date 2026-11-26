@@ -13,7 +13,7 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  * @deprecated Capabilities of IO subsystem are described by {@link IOServiceDescriptor}.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "24.0")
 public final class IOServices {
 
     public static final ServiceName IO = ServiceName.JBOSS.append("io");

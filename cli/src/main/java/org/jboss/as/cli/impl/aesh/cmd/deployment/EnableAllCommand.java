@@ -32,7 +32,7 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 @CommandDefinition(name = "enable-all", description = "", activator = ControlledCommandActivator.class)
 public class EnableAllCommand extends AbstractDeployCommand implements LegacyBridge {
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 
@@ -40,7 +40,7 @@ public class EnableAllCommand extends AbstractDeployCommand implements LegacyBri
         super(ctx, AccessRequirements.enableAllAccess(permissions), permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public EnableAllCommand(CommandContext ctx) {
         this(ctx, null);
     }

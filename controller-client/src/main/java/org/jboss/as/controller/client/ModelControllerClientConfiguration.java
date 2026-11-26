@@ -80,7 +80,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
      * @return the SSLContext.
      * @deprecated Use {@link ModelControllerClientConfiguration#getSslContextFactory()}
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.0")
     SSLContext getSSLContext();
 
 
@@ -114,7 +114,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
      *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
      *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
      */
-    @Deprecated
+    @Deprecated(since = "3.0")
     default URI getAuthenticationConfigUri() {
         return null;
     }
@@ -246,7 +246,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
          *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
          *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
          */
-        @Deprecated
+        @Deprecated(since = "3.0")
         public Builder setAuthenticationConfigUri(final URI authConfigUri) {
             this.authConfigUri = authConfigUri;
             return this;

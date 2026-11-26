@@ -131,7 +131,7 @@ public class AccessAuditContext {
      * @return The current {@link AccessAuditContext}
      * @deprecated Internal use, will be changed without warning at any time.
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = false, since = "1.0")
     public static AccessAuditContext currentAccessAuditContext() {
         if (WildFlySecurityManager.isChecking()) {
             System.getSecurityManager().checkPermission(ControllerPermission.GET_CURRENT_ACCESS_AUDIT_CONTEXT);

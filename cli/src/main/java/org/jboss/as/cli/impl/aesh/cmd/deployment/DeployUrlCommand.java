@@ -58,7 +58,7 @@ public class DeployUrlCommand extends AbstractDeployContentCommand {
         super(ctx, permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public DeployUrlCommand(CommandContext ctx, String replaceName) {
         super(ctx, null, replaceName);
     }

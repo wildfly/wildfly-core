@@ -12,7 +12,7 @@ import java.util.Collection;
  * @author Paul Ferraro
  * @deprecated To be removed without replacement.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "22.0")
 public interface OperationDescriptor {
     Collection<? extends AttributeDefinition> getAttributes();
 }

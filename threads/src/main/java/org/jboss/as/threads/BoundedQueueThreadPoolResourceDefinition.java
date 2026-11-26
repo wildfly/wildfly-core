@@ -72,7 +72,7 @@ public class BoundedQueueThreadPoolResourceDefinition extends SimpleResourceDefi
     /**
      * @deprecated This class is not designed for subclassing and having this constructor be accessible is a specific workaround for WFCORE-1623 that may be reverted at any time
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = false, since = "3.0")
     protected BoundedQueueThreadPoolResourceDefinition(boolean blocking, boolean registerRuntimeOnly,
                                                      String type, ServiceName serviceNameBase, String resolverPrefix, OperationStepHandler addHandler,
                                                      OperationStepHandler removeHandler) {

@@ -30,7 +30,7 @@ public class UndeployCommand extends AbstractUndeployCommand {
         super(ctx, permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public UndeployCommand(CommandContext ctx) {
         this(ctx, null);
     }

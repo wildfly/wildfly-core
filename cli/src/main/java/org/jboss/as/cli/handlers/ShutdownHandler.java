@@ -35,7 +35,7 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue restart;
     private final ArgumentWithValue host;
-    @Deprecated
+    @Deprecated(since = "8.0")
     private final ArgumentWithValue timeout;
     private final ArgumentWithValue suspendTimeout;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;

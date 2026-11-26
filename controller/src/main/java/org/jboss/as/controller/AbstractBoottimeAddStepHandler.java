@@ -32,17 +32,17 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     protected AbstractBoottimeAddStepHandler() {
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected AbstractBoottimeAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
         super(attributes);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected AbstractBoottimeAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public AbstractBoottimeAddStepHandler(Parameters parameters) {
         super(parameters);
     }

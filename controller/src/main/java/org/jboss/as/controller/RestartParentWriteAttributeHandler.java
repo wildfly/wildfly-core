@@ -31,7 +31,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
     /**
      * @deprecated Use {@link #RestartParentWriteAttributeHandler(String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     public RestartParentWriteAttributeHandler(String parentKeyName, AttributeDefinition... definitions) {
         this(parentKeyName, List.of(definitions));
     }
@@ -39,7 +39,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
     /**
      * @deprecated Use {@link #RestartParentWriteAttributeHandler(String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     public RestartParentWriteAttributeHandler(final String parentKeyName, final Collection<AttributeDefinition> definitions) {
         super(definitions);
         this.parentKeyName = parentKeyName;
@@ -130,7 +130,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
      * @throws OperationFailedException if there is a problem installing the services
      * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode)} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
     }
 

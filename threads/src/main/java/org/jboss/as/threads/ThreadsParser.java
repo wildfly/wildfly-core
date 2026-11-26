@@ -57,7 +57,7 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
 
     private static final String SUBSYSTEM_NAME = "threads";
 
-    @Deprecated
+    @Deprecated(since = "3.0")
     public static ThreadsParser getInstance() {
         return new ThreadsParser();
     }

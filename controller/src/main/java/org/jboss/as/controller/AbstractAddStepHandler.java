@@ -37,7 +37,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
     /**
      * This is only retained to support {@link #getAttributes()} and for those subclasses that reference this protected attribute directly.
      */
-    @Deprecated(forRemoval = true) // This is referenceable by subclasses
+    @Deprecated(forRemoval = true, since = "22.0") // This is referenceable by subclasses
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
@@ -53,7 +53,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
     @SuppressWarnings("unchecked")
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
         // Create defensive copy, if collection was not already immutable
         this.attributes = (attributes instanceof Set) ? Set.copyOf((Set<AttributeDefinition>) attributes) : List.copyOf(attributes);
@@ -65,7 +65,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
         this(List.of(attributes));
     }
@@ -76,7 +76,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @param parameters source of attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public AbstractAddStepHandler(Parameters parameters) {
         this.attributes = parameters.attributes;
     }
@@ -86,7 +86,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @deprecated Use the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered instead.
      */
     @Override
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public Collection<? extends AttributeDefinition> getAttributes() {
         return this.attributes;
     }
@@ -199,7 +199,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
      * @deprecated Override {@link #populateModel(OperationContext, ModelNode, Resource)} if necessary
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected void populateModel(final ModelNode operation, final Resource resource) throws  OperationFailedException {
         populateModel(operation, resource.getModel());
     }
@@ -217,7 +217,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
      * @deprecated Override {@link #populateModel(OperationContext, ModelNode, Resource)} if necessary
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
         // Previously model auto-population happened here based on attributes provided via constructor
         // If this method was invoked, we know that the subclass expects us to populate the model
@@ -403,7 +403,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
     /**
      * @deprecated Use default constructor instead.  Operation parameters are determined via the {@link OperationDefinition#getParameters()} of the {@code ModelDescriptionConstants#ADD} operation associated resource.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public static class Parameters {
         // Set is not the ideal data structure, but since this is a protected field, we are stuck with it
         protected Set<AttributeDefinition> attributes = Set.of();

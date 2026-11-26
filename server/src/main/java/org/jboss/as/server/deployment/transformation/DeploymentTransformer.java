@@ -16,7 +16,7 @@ import java.nio.file.Path;
  * This interface is experimental and may be removed or altered at any time.
  */
 @SuppressWarnings("DeprecatedIsStillUsed")
-@Deprecated(forRemoval = false)
+@Deprecated(forRemoval = false, since = "13.0")
 public interface DeploymentTransformer {
 
     /**

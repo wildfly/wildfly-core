@@ -21,7 +21,7 @@ public class UndeployArchiveCommand extends DeployArchiveCommand {
         super(ctx, permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public UndeployArchiveCommand(CommandContext ctx) {
         super(ctx, null);
     }

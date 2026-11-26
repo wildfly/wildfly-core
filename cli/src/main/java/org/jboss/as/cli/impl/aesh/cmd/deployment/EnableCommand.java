@@ -50,7 +50,7 @@ public class EnableCommand extends AbstractDeployCommand implements LegacyBridge
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 
@@ -63,7 +63,7 @@ public class EnableCommand extends AbstractDeployCommand implements LegacyBridge
         super(ctx, AccessRequirements.enableAccess(permissions), permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public EnableCommand(CommandContext ctx) {
         this(ctx, null);
     }

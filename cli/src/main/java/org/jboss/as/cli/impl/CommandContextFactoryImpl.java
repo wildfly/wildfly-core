@@ -47,7 +47,7 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public CommandContext newCommandContext(String controller, String username, char[] password, boolean initConsole, int connectionTimeout) throws CliInitializationException {
         return newCommandContext(new CommandContextConfiguration.Builder()
                 .setController(controller)
@@ -59,7 +59,7 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public CommandContext newCommandContext(String controller, String username, char[] password, boolean disableLocalAuth, boolean initConsole, int connectionTimeout) throws CliInitializationException {
         return newCommandContext(new CommandContextConfiguration.Builder()
                 .setController(controller)
@@ -85,7 +85,7 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password)
             throws CliInitializationException {
         try {
@@ -100,7 +100,7 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password,
             boolean initConsole, int connectionTimeout) throws CliInitializationException {
         try {
@@ -117,7 +117,7 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password,
             InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
         try {

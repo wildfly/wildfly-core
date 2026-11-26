@@ -41,7 +41,7 @@ public class RemotingServices {
      * The name of the endpoint service installed by the remoting subsystem.
      * @deprecated Reference remoting endpoint capability instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public static final ServiceName SUBSYSTEM_ENDPOINT = REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);//REMOTING_BASE.append("endpoint", "subsystem");
 
     /** The base name of the connector services */
@@ -53,7 +53,7 @@ public class RemotingServices {
     /**
      * @deprecated Reference listener register capability instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public static final ServiceName HTTP_LISTENER_REGISTRY = HTTP_LISTENER_REGISTRY_CAPABILITY.getCapabilityServiceName(ListenerRegistry.class);
 
     /**
@@ -103,7 +103,7 @@ public class RemotingServices {
         builder.install();
     }
 
-    @Deprecated
+    @Deprecated(since = "2.0")
     public static void installConnectorServicesForNetworkInterfaceBinding(final ServiceTarget serviceTarget,
                                                                           final ServiceName endpointName,
                                                                           final String connectorName,

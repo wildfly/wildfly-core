@@ -67,7 +67,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
     public static final ServiceName HC_SERVICE_NAME = ServiceName.JBOSS.append("host", "controller");
     /** @deprecated Use the org.wildfly.management.executor capability */
-    @Deprecated
+    @Deprecated(since = "3.0")
     public static final ServiceName HC_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("executor");
     public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled", "executor");
 

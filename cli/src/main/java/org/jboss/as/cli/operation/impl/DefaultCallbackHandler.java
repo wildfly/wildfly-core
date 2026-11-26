@@ -88,7 +88,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         address = prefix;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void parse(OperationRequestAddress initialAddress, String argsStr) throws CommandFormatException {
         parse(initialAddress, argsStr, null);
     }
@@ -106,7 +106,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         substitutedLine = ParserUtil.parseLine(argsStr, this, validation, ctx, disableResolutionException);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void parse(OperationRequestAddress initialAddress, String argsStr, boolean validation) throws CommandFormatException {
         parse(initialAddress, argsStr, validation, null);
     }
@@ -121,7 +121,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public void parseOperation(OperationRequestAddress prefix, String argsStr) throws CommandFormatException {
         reset();
         this.setFormat(OperationFormat.INSTANCE);
