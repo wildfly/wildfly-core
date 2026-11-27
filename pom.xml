@@ -269,7 +269,7 @@
         <version.org.assertj>3.27.7</version.org.assertj>
         <version.org.bouncycastle>1.87</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.5.1</version.org.codehaus.plexus.plexus-utils>
-        <version.org.eclipse.jgit>7.6.0.202603022253-r</version.org.eclipse.jgit>
+        <version.org.eclipse.jgit>7.8.1.202611041320-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.9</version.org.eclipse.parsson>
         <version.org.jline.jansi>4.2.1</version.org.jline.jansi>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
